@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SIMPLOYER_TOKEN = os.getenv("SIMPLOYER_TOKEN")
-YAMMER_TOKEN = os.getenv("YAMMER_TOKEN")
+# Postar som Biner HR Agent om token finns, annars faller tillbaka på YAMMER_TOKEN
+YAMMER_TOKEN = os.getenv("HR_AGENT_TOKEN") or os.getenv("YAMMER_TOKEN")
 
 SIMPLOYER_API = "https://api.alexishr.com/v1"
 YAMMER_API = "https://www.yammer.com/api/v1"
