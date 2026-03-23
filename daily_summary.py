@@ -4,10 +4,11 @@ Returnerar en textsträng redo att klistras in i Coworks dagliga rapport.
 Kör: python daily_summary.py
 """
 import sys
-import json
+import io
 import requests
 from datetime import datetime, timezone, timedelta
 sys.path.insert(0, r"C:\Users\JesperGunnarson\Projects\VivaEngage")
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 from auth import get_token
 
 BASE_URL = "https://www.yammer.com/api/v1"
@@ -93,8 +94,13 @@ def main():
         unread = [n for n in notifs if not n.get("read")]
         if unread:
             lines.append(f"**Olästa notifikationer: {len(unread)}**")
-            for n in unread[:3]:
-                lines.append(f"- {n.get('body', 'Ingen detalj')}")
+            for n in unread[:5]:
+                msg = n.get("message", "")
+                # Rensa [[user:ID]] och [[group:ID]] till läsbar text
+                import re
+                msg = re.sub(r'\[\[user:\d+\]\]', 'någon', msg)
+                msg = re.sub(r'\[\[group:\d+\]\]', 'en community', msg)
+                lines.append(f"- {msg}")
         else:
             lines.append("*Inga olästa notifikationer.*")
     except Exception as e:
