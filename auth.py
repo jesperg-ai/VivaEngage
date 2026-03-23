@@ -52,10 +52,10 @@ def get_token(account: str = "jesper") -> str:
         result = app.acquire_token_silent(SCOPES, account=accounts[0])
 
     if not result:
-        hint = _LOGIN_HINTS.get(account, "")
-        flow = app.initiate_device_flow(scopes=SCOPES, login_hint=hint or None)
+        hint = _LOGIN_HINTS.get(account, account)
+        flow = app.initiate_device_flow(scopes=SCOPES)
         print(f"\n{'='*60}")
-        print(f"  Inloggning krävs för: {hint or account}")
+        print(f"  Inloggning krävs för: {hint}")
         print(f"  {flow['message']}")
         print(f"{'='*60}\n")
         result = app.acquire_token_by_device_flow(flow)
