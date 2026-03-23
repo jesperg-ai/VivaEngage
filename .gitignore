@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-token_cache.json
+token_cache*.json

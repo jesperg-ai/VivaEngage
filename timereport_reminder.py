@@ -8,13 +8,12 @@ import os
 import requests
 from datetime import date, timedelta
 from dotenv import load_dotenv
+from auth import get_token
 
 load_dotenv()
 
-TOKEN           = os.getenv("YAMMER_TOKEN")
 HENRIK_ID       = os.getenv("HENRIK_USER_ID", "1575197266")
 ANNELIE_ID      = os.getenv("ANNELIE_USER_ID", "6401258684416")
-HEADERS         = {"Authorization": f"Bearer {TOKEN}"}
 API             = "https://www.yammer.com/api/v1"
 TARGET_GROUP    = "Nyheter"   # Matchar "Biner – Nyheter & Info"
 
@@ -167,8 +166,8 @@ MONTH_INTROS = {
 # API-hjälpare
 # ---------------------------------------------------------------------------
 
-def get_group_id(name_contains):
-    resp = requests.get(f"{API}/groups.json", headers=HEADERS)
+def get_group_id(headers, name_contains):
+    resp = requests.get(f"{API}/groups.json", headers=headers)
     resp.raise_for_status()
     groups = resp.json()
     group = next((g for g in groups if name_contains in g["full_name"]), None)
@@ -177,7 +176,7 @@ def get_group_id(name_contains):
     return group["id"], group["full_name"]
 
 
-def post_message(group_id, body, mentioned_user_ids=None):
+def post_message(headers, group_id, body, mentioned_user_ids=None):
     data = {"body": body, "group_id": group_id}
     params = []
     if mentioned_user_ids:
@@ -185,7 +184,7 @@ def post_message(group_id, body, mentioned_user_ids=None):
             params.append(("mentioned_user_ids[]", uid))
     resp = requests.post(
         f"{API}/messages.json",
-        headers=HEADERS,
+        headers=headers,
         data=data,
         params=params if params else None
     )
@@ -237,10 +236,13 @@ def main():
         print("Inget inlägg postas.")
         return
 
+    token = get_token("jesper")
+    headers = {"Authorization": f"Bearer {token}"}
+
     month_name = MONTH_NAMES[today.month]
     print(f"✅ Idag är sista arbetsdagen i {month_name} {today.year} – postar påminnelse!")
 
-    group_id, group_name = get_group_id(TARGET_GROUP)
+    group_id, group_name = get_group_id(headers, TARGET_GROUP)
     print(f"Community: {group_name}")
 
     message = build_message(today.month, month_name)
@@ -250,6 +252,7 @@ def main():
     print("-" * 50)
 
     resp = post_message(
+        headers,
         group_id,
         message,
         mentioned_user_ids=[HENRIK_ID, ANNELIE_ID]
