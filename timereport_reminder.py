@@ -7,6 +7,7 @@ Taggar Henrik och Annelie.
 import os
 import requests
 from datetime import date, timedelta
+from pathlib import Path
 from dotenv import load_dotenv
 from auth import get_token
 
@@ -16,6 +17,7 @@ HENRIK_ID       = os.getenv("HENRIK_USER_ID", "1575197266")
 ANNELIE_ID      = os.getenv("ANNELIE_USER_ID", "6401258684416")
 API             = "https://www.yammer.com/api/v1"
 TARGET_GROUP    = "Nyheter"   # Matchar "Biner – Nyheter & Info"
+POSTED_MARKER   = Path(__file__).parent / ".timereport_posted"
 
 
 # ---------------------------------------------------------------------------
@@ -236,6 +238,12 @@ def main():
         print("Inget inlägg postas.")
         return
 
+    # Dublettkoll: hoppa över om vi redan postat den här månaden
+    marker_key = f"{today.year}-{today.month:02d}"
+    if POSTED_MARKER.exists() and POSTED_MARKER.read_text().strip() == marker_key:
+        print(f"Påminnelse redan postad för {marker_key}. Inget nytt inlägg.")
+        return
+
     token = get_token("jesper")
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -259,6 +267,7 @@ def main():
     )
 
     if resp.ok:
+        POSTED_MARKER.write_text(marker_key)
         print(f"✅ Påminnelse för {month_name} {today.year} postad!")
     else:
         print(f"❌ Fel: {resp.status_code} – {resp.text[:300]}")
