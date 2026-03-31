@@ -88,6 +88,19 @@ def last_working_day(year: int, month: int) -> date:
     return last
 
 
+def next_working_day(d: date) -> date:
+    """Returnerar nästa arbetsdag efter givet datum."""
+    holidays = swedish_holidays(d.year)
+    nwd = d + timedelta(days=1)
+    while nwd.weekday() >= 5 or nwd in holidays:
+        nwd += timedelta(days=1)
+        holidays |= swedish_holidays(nwd.year)
+    return nwd
+
+
+DAY_NAMES = ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"]
+
+
 def is_last_working_day_today() -> bool:
     today = date.today()
     lwd = last_working_day(today.year, today.month)
@@ -197,7 +210,7 @@ def post_message(headers, group_id, body, mentioned_user_ids=None):
 # Meddelandebyggare
 # ---------------------------------------------------------------------------
 
-def build_message(month: int, month_name: str) -> str:
+def build_message(month: int, month_name: str, next_workday_name: str) -> str:
     title, intro = MONTH_INTROS.get(month, (
         f"📅 Sista arbetsdagen i {month_name}",
         f"Månaden är slut och det är dags att stänga {month_name}."
@@ -208,7 +221,7 @@ def build_message(month: int, month_name: str) -> str:
 {intro}
 
 Det betyder att tidrapporten för {month_name} ska vara klar idag.
-På måndag morgon attesterar vi (jag och Henrik), sedan kör Annelie igång med fakturering.
+På {next_workday_name} morgon attesterar vi (jag och Henrik), sedan kör Annelie igång med fakturering.
 
 Så innan du börjar planera nästa månad:
 ✅ Säkerställ att {month_name} är stängd och klar i TicTac
@@ -253,7 +266,9 @@ def main():
     group_id, group_name = get_group_id(headers, TARGET_GROUP)
     print(f"Community: {group_name}")
 
-    message = build_message(today.month, month_name)
+    nwd = next_working_day(today)
+    next_workday_name = DAY_NAMES[nwd.weekday()]
+    message = build_message(today.month, month_name, next_workday_name)
 
     print("\n--- Förhandsgranskning ---")
     print(message)
