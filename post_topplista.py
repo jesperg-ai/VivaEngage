@@ -3,6 +3,8 @@ post_topplista.py
 Körs automatiskt kl 08:00 på första arbetsdagen varje månad.
 Hämtar statistik för föregående månad och postar topplista i Biner – Nyheter & Info.
 """
+import sys, io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 import requests
 from collections import defaultdict
 from datetime import date, timedelta
@@ -57,7 +59,7 @@ def get_messages_in_group(headers, group_id, year_str, month_str):
     """Hämtar alla meddelanden i en grupp för en specifik månad (YYYY-MM)."""
     messages = []
     next_older_than = None
-    prefix = f"{year_str}-{month_str}"
+    prefix = f"{year_str}/{month_str}"
 
     while True:
         url = f"{API}/messages/in_group/{group_id}.json?threaded=false&limit=20"
@@ -122,13 +124,12 @@ def collect_data(headers, groups, year_str, month_str):
             sender_id = msg.get("sender_id")
             thread_id = msg.get("thread_id")
             msg_id    = msg.get("id")
-            body      = msg.get("body", {}).get("plain", "")[:60].strip()
+            body      = msg.get("body", {}).get("plain", "").replace("\n", " ")[:60].strip()
             is_reply  = msg.get("replied_to_id") is not None
 
             if is_reply:
                 comments[sender_id] += 1
-                if thread_id in thread_map:
-                    msg_comments[thread_id] += 1
+                msg_comments[thread_id] += 1
             else:
                 posts[sender_id] += 1
                 thread_map[thread_id] = body
